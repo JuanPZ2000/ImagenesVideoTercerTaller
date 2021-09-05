@@ -1,4 +1,4 @@
-# Juan Pablo Zuluaga C
+# Juan Pablo Zuluaga C, Sergio Hernandez
 import cv2
 import numpy as np
 import os
