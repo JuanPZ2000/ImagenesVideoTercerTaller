@@ -4,6 +4,7 @@ import numpy as np
 import os
 import sys
 def diezmado(image_gray,D): # image in BW , D>1
+    # Verifica que D sea mayor que 1 y sea entero
     assert (D >= 1 and type(D) is int), "El D debe ser un numero entero mayor a 1"
     # FFT
     image_gray_fft = np.fft.fft2(image_gray)
@@ -40,11 +41,13 @@ def diezmado(image_gray,D): # image in BW , D>1
 
 def interpolacion(image_gray, I):
     # Interpolacion
-    assert (I >= 1 and type(I) is int), "El D debe ser un numero entero mayor a 1"
+    # Verifica que I sea mayor que 1 y sea entero
+    assert (I >= 1 and type(I) is int), "El I debe ser un numero entero mayor a 1"
     rows, cols = image_gray.shape
     num_of_zeros = I
     image_zeros = np.zeros((num_of_zeros * rows, num_of_zeros * cols), dtype=image_gray.dtype)
     image_zeros[::num_of_zeros, ::num_of_zeros] = image_gray
+
     # FFT
     image_gray_fft = np.fft.fft2(image_zeros)
     image_gray_fft_shift = np.fft.fftshift(image_gray_fft)
@@ -77,35 +80,42 @@ def interpolacion(image_gray, I):
     return image_filtered
 
 def descomposicion(image_gray, N):
+    # Se declaran los filtros
     H = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
     V = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
     D = np.array([[2, -1, -2], [-1, 4, -1], [-2, -1, 2]])
     L = np.array([[1/16, 1/8, 1/16], [1/8, 1/4, 1/8], [1/16, 1/8, 1/16]])
 
+    # Se crean dos listas, la final es la que se retorna y la auxiliar es para llenarla cada que entre al for
     descomposicion_final= []
     descomposicion_aux = []
+    # Se evalua si el N es 1 para retornar ciertos valores en caso contrario se realiza el for
     if N == 1:
         descomposicion_aux.append(diezmado(cv2.filter2D(image_gray, -1, H), 2))
         descomposicion_aux.append(diezmado(cv2.filter2D(image_gray, -1, V), 2))
         descomposicion_aux.append(diezmado(cv2.filter2D(image_gray, -1, D), 2))
         descomposicion_aux.append(diezmado(cv2.filter2D(image_gray, -1, L), 2))
         descomposicion_final.append(descomposicion_aux)
+
     else:
         for i in range(N):
             #Creo la lista para agregarla a la lista final
             descomposicion_aux = []
             # Convolucion y diezmado
+            # Si es la primera vez que lo hace la entrada tiene que ser image_gray
             if i == 0:
                 descomposicion_aux.append(diezmado(cv2.filter2D(image_gray, -1, H), 2))
                 descomposicion_aux.append(diezmado(cv2.filter2D(image_gray, -1, V), 2))
                 descomposicion_aux.append(diezmado(cv2.filter2D(image_gray, -1, D), 2))
                 IL = diezmado(cv2.filter2D(image_gray, -1, L), 2)
-
+            # Si es la ultima vez que lo hace tiene que agregar la ultima imagen que se filtro con L
             elif i == N-1:
                 descomposicion_aux.append(diezmado(cv2.filter2D(IL, -1, H), 2))
                 descomposicion_aux.append(diezmado(cv2.filter2D(IL, -1, V), 2))
                 descomposicion_aux.append(diezmado(cv2.filter2D(IL, -1, D), 2))
                 descomposicion_aux.append(diezmado(cv2.filter2D(IL, -1, L), 2))
+            # En caso contrario se realiza la convolucion y diezmado teniendo como entrada la imagen IL que se va
+            # sobreescribiendo
             else:
                 descomposicion_aux.append(diezmado(cv2.filter2D(IL, -1, H), 2))
                 descomposicion_aux.append(diezmado(cv2.filter2D(IL, -1, V), 2))
